@@ -26,7 +26,8 @@ class ItemResource extends JsonResource
             'location' => $this->location ? $this->location->location : null,
             'condition' => $this->condition_number->condition_number . ' ' . $this->condition->condition,
             'qr_code' => $this->qrCode ? $this->qrCode->qr_code_data : null,
-            
+            'image_path' => asset('storage/' . $this->image_path) ?? null,
+            'qr_code_image' => $this->qrCode ? asset('storage/' . $this->qrCode->image_path)  : null
         ];
     }
 }

@@ -173,7 +173,6 @@
               
             </div>
             <p v-if="errors.location" class="mt-1 text-sm text-red-600">{{ errors.location[0] }}</p>
-            <p v-if="formData.location" class="mt-1 text-xs text-gray-500">Selected location ID: {{ formData.location }}</p>
           </div>
 
           <!-- Password -->

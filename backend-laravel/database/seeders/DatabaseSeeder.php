@@ -27,21 +27,38 @@ class DatabaseSeeder extends Seeder
         //     'role'     => 'admin',
         // ]);
 
-        Condition::factory()->create([
-            'condition' => 'Serviceable',
-        ]);
+        $conditions = ['Serviceable', 'Non - Serviceable', 'On Maintenance'];
 
-        Location::factory()->create([
-            'location' => 'Panabo',
-        ]);
+        foreach ($conditions as $con) {
+            Condition::factory()->create([
+                'condition' => $con,
+            ]);
+        }
 
-        ConditionNumber::factory()->create([
-            'condition_number' => 'A1',
-        ]);
+        $locations = ['Billing Unit', 'Engineering  ', 'O & M', 'COA', 'ICT', 'Admin & Finance', 'IDDD', 'Equipment'];
 
-        Category::factory()->create([
-            'category' => 'Desktop',
+        foreach ($locations as $loc) {
+            Location::factory()->create([
+                'location' => $loc,
         ]);
+        }
 
+         $condition_numbers = ['A1', 'A2', 'A3', 'A4', 'A5'];
+
+        foreach ($condition_numbers as $conn) {
+            ConditionNumber::factory()->create([
+                'condition_number' => $conn,
+            ]);
+        }
+
+        $categories = ['Desktop', 'Consumables', 'ICT'];
+
+
+        foreach ($categories as $cat) {
+            Category::factory()->create([
+                'category' => $cat,
+            ]);
+        }
     }
+
 }

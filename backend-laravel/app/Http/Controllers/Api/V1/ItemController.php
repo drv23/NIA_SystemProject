@@ -35,11 +35,9 @@ class ItemController extends Controller
 
         $image = $request->file('image');
 
-        if ($image) {
+        if($image) {
             $itemService->handleImageUpload($newItem, $image);
-        }
-
-        
+        } 
 
         $itemWithQrCode = $qrCodeService->generateQrCode($newItem);
 

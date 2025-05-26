@@ -123,7 +123,6 @@
           </div>
         </div>
 
-        <!-- Location -->
         <div class="form-group">
           <label class="form-label">Issued To</label>
           <div class="relative flex items-center">
@@ -131,11 +130,11 @@
               <span class="material-icons-outlined">location_on</span>
             </span>
             <select v-model="formData.issuedTo" class="form-select !pl-12" required>
-              <option value="" disabled>Select location</option>
+              <option value="" disabled>Select Person</option>
               <option v-for="user in users" 
                   :key="user.id" 
                   :value="user.id || user.user.id">
-                {{ user.fullname }}
+                {{ `${user.fullname.charAt(0)}. MANDARIN` }}
               </option>
             </select>
           </div>

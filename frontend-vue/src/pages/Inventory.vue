@@ -9,42 +9,32 @@ const currentPage = ref(1)
 const itemsPerPage = ref(8)
 const totalItems = ref(0)
 
-const { useitems } = useItems()
+// Get items from the API using the composable
+const { items, fetchitems, loading, error } = useItems()
 
-console.log(useitems);
+// Fetch items when component mounts
+onMounted(async () => {
+  await fetchitems()
+})
 
-// Sample data
-const inventoryItems = ref([
-  {
-    qrCode: '/images/qr-sample.png',
-    image: '/images/desktop.png',
-    article: 'Desktop',
-    category: 'Inventory',
-    description: 'Intel Core i5-650 2GB memory',
-    propertyAccountCode: 'DDN-IMO-F501-223-C-02.05-10',
-    unitValue: '32,200.00',
-    dateAcquired: '12/28/10',
-    poNumber: '2010-12-0579',
-    location: 'Billing/I.Mandin',
-    condition: 'A3 Servicable',
-    actions: ['edit', 'delete']
-  },
-  // Generate 20 items with unique IDs for better demo
-  ...Array(19).fill().map((_, index) => ({
-    qrCode: '/images/qr-sample.png',
-    image: '/images/desktop.png',
-    article: 'Desktop',
-    category: 'Inventory',
-    description: `Intel Core i5-650 ${(index + 2)}GB memory`,
-    propertyAccountCode: `DDN-IMO-F501-223-C-02.05-${index + 11}`,
-    unitValue: '32,200.00',
-    dateAcquired: '12/28/10',
-    poNumber: '2010-12-0579',
-    location: 'Billing/I.Mandin',
-    condition: 'A3 Servicable',
-    actions: ['edit', 'delete']
+// Map API data to the format expected by the table
+const inventoryItems = computed(() => {
+  return items.value.map(item => ({
+    qrCode: item.qr_code_image || '/images/qr-sample.png',
+    image: item.image_path || '/images/desktop.png',
+    article: item.unit || '',
+    category: item.category || 'Inventory',
+    description: item.description || '',
+    propertyAccountCode: item.property_account_code || '',
+    unitValue: item.unit_value || '',
+    dateAcquired: item.date_acquired || '',
+    poNumber: item.po_number || '',
+    location: item.location || '',
+    condition: item.condition || '',
+    actions: ['edit', 'delete'],
+    id: item.id // Keep the original ID for reference
   }))
-])
+})
 
 
 
@@ -89,6 +79,21 @@ const changeItemsPerPage = (newValue) => {
 const goToAddItem = () => {
   router.push('/add-item')
 }
+
+// Handle edit action
+const editItem = (item) => {
+  // You can implement this to navigate to an edit page with the item ID
+  router.push(`/edit-item/${item.id}`)
+}
+
+// Handle delete action
+const deleteItem = (item) => {
+  // You can implement this to show a confirmation dialog and then delete the item
+  if (confirm(`Are you sure you want to delete ${item.article}?`)) {
+    // Call your delete API here
+    console.log('Delete item:', item)
+  }
+}
 </script>
 
 <template>
@@ -130,13 +135,42 @@ const goToAddItem = () => {
         <button class="btn-secondary">
           Articles
         </button>
+        <button @click="fetchitems" class="btn-secondary" :disabled="loading">
+          <span class="material-icons-outlined text-lg mr-1">refresh</span>
+          Refresh
+        </button>
       </div>
     </div>
 
     <!-- Table -->
     <div class="bg-white rounded-lg border border-gray-200">
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 whitespace-nowrap">
+        <!-- Loading indicator -->
+        <div v-if="loading" class="flex justify-center items-center py-10">
+          <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
+        </div>
+        
+        <!-- Error state -->
+        <div v-else-if="error" class="flex flex-col justify-center items-center py-10">
+          <span class="material-icons-outlined text-4xl text-red-400">error_outline</span>
+          <p class="mt-2 text-red-500">{{ error }}</p>
+          <button 
+            @click="fetchitems" 
+            class="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            Try Again
+          </button>
+        </div>
+        
+        <!-- Empty state -->
+        <div v-else-if="paginatedItems.length === 0" class="flex flex-col justify-center items-center py-10">
+          <span class="material-icons-outlined text-4xl text-gray-400">inventory_2</span>
+          <p class="mt-2 text-gray-500">No inventory items found</p>
+          <p v-if="searchQuery" class="text-sm text-gray-400">Try adjusting your search query</p>
+        </div>
+        
+        <!-- Table with data -->
+        <table v-else class="min-w-full divide-y divide-gray-200 whitespace-nowrap">
           <thead>
             <tr class="bg-gray-50">
               <th class="sticky left-0 z-10 bg-gray-50 w-10 px-4 py-3">
@@ -157,7 +191,7 @@ const goToAddItem = () => {
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
-            <tr v-for="item in paginatedItems" :key="item.propertyAccountCode" class="hover:bg-gray-50">
+            <tr v-for="item in paginatedItems" :key="item.id || item.propertyAccountCode" class="hover:bg-gray-50">
               <td class="sticky left-0 z-10 bg-white hover:bg-gray-50 px-4 py-2">
                 <input type="checkbox" class="rounded border-gray-300">
               </td>
@@ -214,10 +248,18 @@ const goToAddItem = () => {
               </td>
               <td class="sticky right-0 z-10 bg-white hover:bg-gray-50 px-4 py-2">
                 <div class="flex space-x-2">
-                  <button class="p-1 rounded-md bg-green-100 text-green-600 hover:bg-green-200">
+                  <button 
+                    @click="editItem(item)" 
+                    class="p-1 rounded-md bg-green-100 text-green-600 hover:bg-green-200"
+                    title="Edit item"
+                  >
                     <span class="material-icons-outlined text-sm">edit</span>
                   </button>
-                  <button class="p-1 rounded-md bg-green-100 text-green-600 hover:bg-green-200">
+                  <button 
+                    @click="deleteItem(item)" 
+                    class="p-1 rounded-md bg-green-100 text-green-600 hover:bg-green-200"
+                    title="Delete item"
+                  >
                     <span class="material-icons-outlined text-sm">delete</span>
                   </button>
                 </div>
@@ -227,8 +269,8 @@ const goToAddItem = () => {
         </table>
       </div>
 
-      <!-- Pagination -->
-      <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200">
+      <!-- Pagination - only show when not loading and has items -->
+      <div v-if="!loading && totalFilteredItems > 0" class="flex items-center justify-between px-4 py-3 border-t border-gray-200">
         <div class="flex items-center gap-4">
         <div class="text-sm text-gray-600">
             Result {{ (currentPage - 1) * itemsPerPage + 1 }}-{{ Math.min(currentPage * itemsPerPage, totalFilteredItems) }} of {{ totalFilteredItems }}
