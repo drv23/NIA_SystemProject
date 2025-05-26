@@ -12,7 +12,7 @@ class ItemService
     {
         if ($image) {
             $path = $image->store('item_images', 'public');
-            $item->update(['image' => $path]);
+            $item->update(['image_path' => $path]);
         }
     }
 }

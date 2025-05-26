@@ -288,7 +288,7 @@ const formData = ref({
   issuedTo: '',
   condition: '',
   conditionNumber: '',
-  image: null,
+  image: ''
 })
 
 const formatFileSize = (bytes) => {

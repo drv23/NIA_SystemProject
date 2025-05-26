@@ -34,7 +34,7 @@ class StoreItemRequest extends FormRequest
             'condition_id' => 'required|exists:conditions,id',
             'condition_number_id' => 'required|exists:condition_numbers,id',
             'user_id' => 'required|exists:users,id',
-            'image' =>'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:10240'
+            'image_path' =>'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:10240'
         ];
     }
 }
