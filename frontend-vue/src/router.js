@@ -11,6 +11,16 @@ import Analytics from "./pages/Analytics.vue"
 import AddItem from "./pages/AddItem.vue"
 import Maintenance from "./pages/Maintenance.vue"
 import AddAccount from './pages/AddAccount.vue'
+import EditAccount from './pages/EditAccount.vue'
+import Reporting from './pages/reports/index.vue'
+import DesktopMonitoring from './pages/reports/desktop.vue'
+import SuppliesOverview from './pages/SuppliesOverview.vue'
+import UsageOverview from './pages/UsageOverview.vue'
+import QRGeneration from './pages/QRGeneration.vue'
+import ActivityLog from './pages/ActivityLog.vue'
+import Profile from './pages/ProfileView.vue'
+import DeletedItems from './pages/DeletedItems.vue'
+import DeletedAccounts from './pages/DeletedAccounts.vue'
 
 const routes = [
     {
@@ -21,6 +31,36 @@ const routes = [
                 path: '/dashboard',
                 name: 'Dashboard',
                 component: Dashboard
+            },
+            {
+                path: '/profile',
+                name: 'Profile',
+                component: Profile
+            },
+            {
+                path: '/activity-log',
+                name: 'ActivityLog',
+                component: ActivityLog
+            },
+            {
+                path: '/history',
+                name: 'History',
+                children: [
+                    {
+                        path: '',
+                        redirect: '/history/deleted-items'
+                    },
+                    {
+                        path: 'deleted-items',
+                        name: 'DeletedItems',
+                        component: DeletedItems
+                    },
+                    {
+                        path: 'deleted-accounts',
+                        name: 'DeletedAccounts',
+                        component: DeletedAccounts
+                    }
+                ]
             },
             {
                 path: '/inventory',
@@ -47,10 +87,40 @@ const routes = [
                 component: Analytics
             },
             {
-        path: '/add-account',
-        name: 'AddAccount',
-        component: AddAccount
-    },
+                path: '/supplies',
+                name: 'SuppliesOverview',
+                component: SuppliesOverview
+            },
+            {
+                path: '/usage',
+                name: 'UsageOverview',
+                component: UsageOverview
+            },
+            {
+                path: '/add-account',
+                name: 'AddAccount',
+                component: AddAccount
+            },
+            {
+                path: '/edit-account/:id',
+                name: 'EditAccount',
+                component: EditAccount
+            },
+            {
+                path: '/reporting',
+                name: 'Reporting',
+                component: Reporting
+            },
+            {
+                path: '/reports/desktop/:type?',
+                name: 'DesktopMonitoring',
+                component: DesktopMonitoring
+            },
+            {
+                path: '/QRGeneration',
+                name: 'QRGeneration',
+                component: QRGeneration
+            }
         ]
     },
     {

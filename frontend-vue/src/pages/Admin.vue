@@ -93,23 +93,120 @@ const fetchUsers = async () => {
   }
 }
 
+// State for reassign modal
+const showReassignModal = ref(false)
+const userToDelete = ref(null)
+const newUserId = ref('')
+const itemCount = ref(0)
+const reassignLoading = ref(false)
+const availableUsers = ref([])
+
+// Fetch users for reassignment dropdown
+const fetchAvailableUsers = async (excludeUserId) => {
+  try {
+    const response = await axiosClient.get('/users')
+    if (response.data && Array.isArray(response.data.data)) {
+      // Filter out the user being deleted
+      availableUsers.value = response.data.data.filter(user => user.id != excludeUserId)
+    } else if (response.data && Array.isArray(response.data)) {
+      availableUsers.value = response.data.filter(user => user.id != excludeUserId)
+    } else {
+      availableUsers.value = []
+    }
+  } catch (error) {
+    console.error('Error fetching available users:', error)
+    availableUsers.value = []
+  }
+}
+
 // Delete user function
 const deleteUser = async (userId) => {
-  if (confirm('Are you sure you want to delete this user?')) {
+  if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
     try {
-      await axiosClient.delete(`/users/${userId}`)
+      // Show loading state
+      loading.value = true
+      
+      // Send delete request to API
+      const response = await axiosClient.delete(`/users/${userId}`)
+      
+      // Show success message
+      alert(response.data?.message || 'User deleted successfully')
+      
       // Refresh the users list
       await fetchUsers()
     } catch (error) {
       console.error('Error deleting user:', error)
+      
+      // Check if the error is due to associated items
+      if (error.response?.data?.status === 'error' && 
+          error.response?.data?.itemCount > 0) {
+        
+        // Set up the reassign modal
+        userToDelete.value = error.response.data.userId
+        itemCount.value = error.response.data.itemCount
+        
+        // Fetch available users for reassignment
+        await fetchAvailableUsers(userToDelete.value)
+        
+        // Show the modal
+        showReassignModal.value = true
+      } else {
+        // Show error message to user
+        if (error.response?.data?.message) {
+          alert(error.response.data.message)
+        } else {
+          alert('Failed to delete user. Please try again.')
+        }
+      }
+    } finally {
+      loading.value = false
     }
   }
 }
 
-// Edit user function
-const editUser = (userId) => {
-  router.push(`/edit-account/${userId}`)
+// Reassign items and then delete user
+const reassignAndDelete = async () => {
+  if (!newUserId.value) {
+    alert('Please select a user to reassign items to')
+    return
+  }
+  
+  try {
+    reassignLoading.value = true
+    
+    // First reassign the items
+    const reassignResponse = await axiosClient.post(`/users/${userToDelete.value}/reassign-items`, {
+      new_user_id: newUserId.value
+    })
+    
+    // Then delete the user
+    const deleteResponse = await axiosClient.delete(`/users/${userToDelete.value}`)
+    
+    // Show success message
+    alert('Items reassigned and user deleted successfully')
+    
+    // Close the modal and reset
+    closeReassignModal()
+    
+    // Refresh the users list
+    await fetchUsers()
+  } catch (error) {
+    console.error('Error during reassign and delete:', error)
+    alert(error.response?.data?.message || 'Failed to reassign items and delete user')
+  } finally {
+    reassignLoading.value = false
+  }
 }
+
+// Close the reassign modal
+const closeReassignModal = () => {
+  showReassignModal.value = false
+  userToDelete.value = null
+  newUserId.value = ''
+  itemCount.value = 0
+}
+
+// Edit user function is now handled by router-link
 
 const filteredAdminAccounts = computed(() => {
   console.log('Filtering admin accounts:', adminAccounts.value)
@@ -324,11 +421,16 @@ onMounted(() => {
                     <td class="px-6 py-4">{{ account.location || 'N/A' }}</td>
                     <td class="px-6 py-4">
                       <div class="flex gap-2">
-                        <button @click="editUser(account.id)" class="text-green-600 hover:text-green-700">
+                        <router-link :to="`/edit-account/${account.id}`" class="text-green-600 hover:text-green-700 inline-flex items-center justify-center p-1">
                           <span class="material-icons-outlined">edit</span>
-                        </button>
-                        <button @click="deleteUser(account.id)" class="text-red-600 hover:text-red-700">
-                          <span class="material-icons-outlined">delete</span>
+                        </router-link>
+                        <button 
+                          @click="deleteUser(account.id)" 
+                          class="text-red-600 hover:text-red-700 p-1"
+                          :disabled="loading"
+                        >
+                          <span class="material-icons-outlined" v-if="!loading">delete</span>
+                          <span class="material-icons-outlined animate-spin" v-else>refresh</span>
                         </button>
                       </div>
                     </td>
@@ -442,11 +544,16 @@ onMounted(() => {
                     <td class="px-6 py-4">{{ account.location || 'N/A' }}</td>
                     <td class="px-6 py-4">
                       <div class="flex gap-2">
-                        <button @click="editUser(account.id)" class="text-green-600 hover:text-green-700">
+                        <router-link :to="`/edit-account/${account.id}`" class="text-green-600 hover:text-green-700 inline-flex items-center justify-center p-1">
                           <span class="material-icons-outlined">edit</span>
-                        </button>
-                        <button @click="deleteUser(account.id)" class="text-red-600 hover:text-red-700">
-                          <span class="material-icons-outlined">delete</span>
+                        </router-link>
+                        <button 
+                          @click="deleteUser(account.id)" 
+                          class="text-red-600 hover:text-red-700 p-1"
+                          :disabled="loading"
+                        >
+                          <span class="material-icons-outlined" v-if="!loading">delete</span>
+                          <span class="material-icons-outlined animate-spin" v-else>refresh</span>
                         </button>
                       </div>
                     </td>
@@ -496,6 +603,52 @@ onMounted(() => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+    <!-- Reassign Items Modal -->
+    <div v-if="showReassignModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <h3 class="text-lg font-medium mb-4">Reassign Items</h3>
+        
+        <p class="mb-4">
+          This user has {{ itemCount }} associated items. Please select another user to reassign these items to before deleting.
+        </p>
+        
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Select User</label>
+          <select 
+            v-model="newUserId"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+            required
+          >
+            <option value="" disabled>Select a user</option>
+            <option 
+              v-for="user in availableUsers" 
+              :key="user.id" 
+              :value="user.id"
+            >
+              {{ user.fullname }} ({{ user.role }})
+            </option>
+          </select>
+        </div>
+        
+        <div class="flex justify-end gap-3 mt-6">
+          <button 
+            @click="closeReassignModal"
+            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            :disabled="reassignLoading"
+          >
+            Cancel
+          </button>
+          <button 
+            @click="reassignAndDelete"
+            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-75 disabled:cursor-not-allowed flex items-center gap-2"
+            :disabled="!newUserId || reassignLoading"
+          >
+            <span v-if="reassignLoading" class="material-icons-outlined animate-spin text-sm">refresh</span>
+            {{ reassignLoading ? 'Processing...' : 'Reassign & Delete' }}
+          </button>
         </div>
       </div>
     </div>

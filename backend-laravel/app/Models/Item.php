@@ -12,8 +12,8 @@ class Item extends Model
     use HasFactory;
 
     protected $fillable = [
-        'uuid', 'unit', 'description', 'pac', 'unit_value', 'date_acquired', 'po_number', 'category_id', 'location_id'
-        , 'condition_id', 'condition_number_id', 'user_id', 'image_path'
+        'uuid', 'unit', 'description', 'pac', 'unit_value', 'date_acquired', 'po_number', 'category_id', 'location_id',
+        'condition_id', 'condition_number_id', 'user_id', 'image_path'
     ];
 
      protected static function booted()

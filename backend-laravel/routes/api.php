@@ -32,12 +32,22 @@ Route::group(['prefix'=>'v1', 'namespace' => 'App\Http\Controllers\Api\V1'], fun
     // USER PROFILE
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
-    // ITEMS
+    // ITEMS - Specific routes first
+    Route::get('items/active', [ItemController::class, 'getActiveItems']);
+    Route::get('items/deleted', [ItemController::class, 'getDeletedItems']);
+    Route::get('items/check/{uuid}', [ItemController::class, 'checkItem']);
+    Route::post('items/restore/{uuid}', [ItemController::class, 'restoreItem']);
+    Route::delete('items/delete/{uuid}', [ItemController::class, 'destroy']);
+    Route::delete('items/delete-by-id/{id}', [ItemController::class, 'destroy']);
+    Route::delete('items/force-delete/{uuid}', [ItemController::class, 'forceDelete']);
+    
+    // General resource routes last
     Route::apiResource('items', ItemController::class);
 
     Route::apiResource('locations', LocationController::class);
 
     Route::apiResource('users', UserController::class);
+    Route::post('users/{id}/reassign-items', [UserController::class, 'reassignItems']);
 
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('conditions', ConditionController::class);

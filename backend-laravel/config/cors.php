@@ -6,7 +6,7 @@ return [
     'credentials' => true,
 
     // Replace '*' with your frontend's exact origin
-    'allowed_origins' => ['http://localhost:5173'], // or whatever your frontend port is
+    'allowed_origins' => ['http://localhost:5174'], // or whatever your frontend port is
 
     'allowed_methods' => ['*'],
 

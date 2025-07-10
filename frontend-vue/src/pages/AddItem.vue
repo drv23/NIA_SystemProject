@@ -248,7 +248,7 @@
               class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-75 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <span v-if="isSubmitting" class="material-icons-outlined animate-spin text-sm">refresh</span>
-              {{ isSubmitting ? 'Creating...' : 'Create Account' }}
+              {{ isSubmitting ? 'Creating...' : 'Create Item' }}
             </button>
           </div>
       </form>
@@ -424,6 +424,20 @@ const handleSubmit = async () => {
     formDataToSend.append('condition_number_id', formData.value.conditionNumber)
     formDataToSend.append('user_id', formData.value.issuedTo)
     
+    console.log('Form data being sent:', {
+      unit: formData.value.unit,
+      description: formData.value.description,
+      pac: formData.value.propertyAccountCode,
+      unit_value: formData.value.unitValue,
+      date_acquired: formData.value.dateAcquired,
+      po_number: formData.value.poNumber,
+      category_id: formData.value.category,
+      location_id: formData.value.location,
+      condition_id: formData.value.condition,
+      condition_number_id: formData.value.conditionNumber,
+      user_id: formData.value.issuedTo
+    })
+    
     // Append the image file if it exists
     if (formData.value.image) {
       formDataToSend.append('image', formData.value.image)
@@ -446,13 +460,32 @@ const handleSubmit = async () => {
   } catch (error) {
     console.error('Full error object:', error)
     console.error('Error response data:', error.response?.data)
+    
+    // More detailed error logging
+    if (error.response) {
+      console.error('Status:', error.response.status)
+      console.error('Headers:', error.response.headers)
+      console.error('Data:', error.response.data)
+    } else if (error.request) {
+      console.error('Request was made but no response received:', error.request)
+    } else {
+      console.error('Error setting up request:', error.message)
+    }
+    
     if (error.response?.data?.errors) {
       errors.value = error.response.data.errors
+    } else if (error.response?.data?.message) {
+      errors.value = {
+        general: [error.response.data.message]
+      }
     } else {
       errors.value = {
         general: ['An unexpected error occurred. Please try again.']
       }
     }
+    
+    // Show alert with error message for better visibility
+    alert('Error creating item: ' + (error.response?.data?.message || 'An unexpected error occurred. Please check the form and try again.'))
   } finally {
     isSubmitting.value = false
   }

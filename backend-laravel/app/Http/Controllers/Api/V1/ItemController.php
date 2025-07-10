@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Item;
 use App\Http\Requests\V1\StoreItemRequest;
-use App\Http\Requests\UpdateItemRequest;
+use App\Http\Requests\V1\UpdateItemRequest;
 use App\Http\Resources\V1\ItemResource;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\ItemCollection;
 use App\Services\V1\ItemService;
 use App\Services\V1\QrCodeService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ItemController extends Controller
 {
@@ -18,7 +20,40 @@ class ItemController extends Controller
      */
     public function index()
     {
-        return new ItemCollection(item::all());
+        try {
+            // Get all non-deleted items
+            $items = Item::all();
+            return new ItemCollection($items);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching items: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to fetch items: ' . $e->getMessage(),
+                'status' => 'error'
+            ], 500);
+        }
+    }
+    
+    /**
+     * Get active (non-deleted) items
+     */
+    public function getActiveItems()
+    {
+        try {
+            // Get all items without checking deleted_at for now
+            $items = Item::all();
+            
+            return response()->json([
+                'message' => 'Active items retrieved successfully',
+                'status' => 'success',
+                'data' => ItemResource::collection($items)
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('Error retrieving active items: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to retrieve active items: ' . $e->getMessage(),
+                'status' => 'error'
+            ], 500);
+        }
     }
 
     /**
@@ -70,14 +105,147 @@ class ItemController extends Controller
      */
     public function update(UpdateItemRequest $request, Item $item)
     {
-        //
+        $itemService = new ItemService();
+        
+        // Update the item with validated data
+        $item->update($request->validated());
+        
+        // Handle image upload if present
+        $image = $request->file('image_path');
+        if ($image) {
+            $itemService->handleImageUpload($item, $image);
+        }
+        
+        // Return the updated item
+        return new ItemResource($item);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Item $item)
+    public function destroy($identifier, Request $request)
     {
-        //
+        try {
+            // First try to find by UUID
+            $item = Item::where('uuid', $identifier)->first();
+            
+            // If not found by UUID, try by ID
+            if (!$item) {
+                // Check if the identifier is numeric (likely an ID)
+                if (is_numeric($identifier)) {
+                    $item = Item::find($identifier);
+                }
+                
+                // If still not found, throw an exception
+                if (!$item) {
+                    throw new \Exception("Item not found with identifier: {$identifier}");
+                }
+            }
+            
+            // Delete associated QR code if exists
+            if ($item->qrCode) {
+                $item->qrCode->delete();
+            }
+            
+            // Delete associated image if exists
+            if ($item->image_path) {
+                Storage::disk('public')->delete($item->image_path);
+            }
+            
+            // Delete the item (hard delete for now)
+            $item->delete();
+            
+            return response()->json([
+                'message' => 'Item deleted successfully',
+                'status' => 'success'
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('Error deleting item: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to delete item: ' . $e->getMessage(),
+                'status' => 'error'
+            ], 500);
+        }
+    }
+    
+    /**
+     * Check if an item exists by UUID
+     */
+    public function checkItem($uuid)
+    {
+        try {
+            $item = Item::where('uuid', $uuid)->firstOrFail();
+            return response()->json([
+                'message' => 'Item found',
+                'status' => 'success',
+                'item' => new ItemResource($item)
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Item not found: ' . $e->getMessage(),
+                'status' => 'error'
+            ], 404);
+        }
+    }
+    
+    /**
+     * Get all deleted items
+     */
+    public function getDeletedItems()
+    {
+        try {
+            // For now, return an empty array since we don't have soft deletes yet
+            return response()->json([
+                'message' => 'Deleted items retrieved successfully',
+                'status' => 'success',
+                'data' => []
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('Error retrieving deleted items: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to retrieve deleted items: ' . $e->getMessage(),
+                'status' => 'error'
+            ], 500);
+        }
+    }
+    
+    /**
+     * Restore a deleted item
+     */
+    public function restoreItem($uuid)
+    {
+        try {
+            // For now, just return a success message
+            return response()->json([
+                'message' => 'Item restore functionality will be available once soft deletes are implemented',
+                'status' => 'success'
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('Error restoring item: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to restore item: ' . $e->getMessage(),
+                'status' => 'error'
+            ], 500);
+        }
+    }
+    
+    /**
+     * Permanently delete an item
+     */
+    public function forceDelete($uuid)
+    {
+        try {
+            // For now, just return a success message
+            return response()->json([
+                'message' => 'Permanent delete functionality will be available once soft deletes are implemented',
+                'status' => 'success'
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('Error permanently deleting item: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to permanently delete item: ' . $e->getMessage(),
+                'status' => 'error'
+            ], 500);
+        }
     }
 }
