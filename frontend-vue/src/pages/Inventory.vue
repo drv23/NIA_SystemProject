@@ -36,7 +36,8 @@ const inventoryItems = computed(() => {
     issuedTo: item.issued_to || 'Not Assigned',
     actions: ['edit', 'delete'],
     id: item.id, // Keep the original ID for reference
-    uuid: item.uuid // Keep the UUID for API operations
+    uuid: item.uuid, // Keep the UUID for API operations
+    quantity: item.quantity
   }))
 })
 
@@ -230,6 +231,7 @@ const printInventory = () => {
       <td>${item.location || 'N/A'}</td>
       <td>${item.condition || 'N/A'}</td>
       <td>${item.issuedTo || 'Not Assigned'}</td>
+      <td>${item.quantity || 'Not Assigned'}</td>
     </tr>
   `).join('')
   
@@ -590,6 +592,7 @@ const deleteItem = async () => {
               <th class="min-w-[120px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ARTICLE</th>
               <th class="min-w-[120px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">CATEGORY</th>
               <th class="min-w-[200px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">DESCRIPTION</th>
+              <!-- <th class="min-w-[200px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">QUANTITY</th> -->
               <th class="min-w-[200px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">PROPERTY ACCOUNT CODE</th>
               <th class="min-w-[120px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">UNIT VALUE</th>
               <th class="min-w-[120px] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">DATE ACQUIRED</th>
@@ -633,6 +636,11 @@ const deleteItem = async () => {
                   {{ item.description }}
                 </div>
               </td>
+              <!-- <td class="px-4 py-2">
+                <div class="text-sm truncate max-w-[200px]" :title="item.quantity">
+                  {{ item.quantity }}
+                </div>
+              </td> -->
               <td class="px-4 py-2">
                 <div class="text-sm truncate max-w-[200px]" :title="item.propertyAccountCode">
                   {{ item.propertyAccountCode }}

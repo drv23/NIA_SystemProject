@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\BorrowTransaction;
 use App\Models\Item;
 use App\Http\Requests\V1\StoreItemRequest;
 use App\Http\Requests\V1\UpdateItemRequest;
@@ -248,4 +249,39 @@ class ItemController extends Controller
             ], 500);
         }
     }
+    public function borrowItem(Request $request, $uuid)
+{
+    $item = Item::where('uuid', $uuid)->first();
+
+    if (!$item) {
+        return response()->json(['message' => 'Item not found.'], 404);
+    }
+
+    $request->validate([
+        'quantity' => 'required|integer|min:1',
+        'borrowed_by' => 'required|string',
+    ]);
+
+    if ($item->quantity < $request->quantity) {
+        return response()->json(['message' => 'Not enough quantity available.'], 400);
+    }
+
+    // Subtract borrowed quantity
+    $item->quantity -= $request->quantity;
+    $item->save();
+
+    // Log the borrow transaction
+    $borrow = BorrowTransaction::create([
+        'item_id' => $item->id,
+        'quantity' => $request->quantity,
+        'borrowed_by' => $request->borrowed_by,
+        'status' => 'borrowed',
+    ]);
+
+    return response()->json([
+        'message' => 'Item borrowed successfully.',
+        'remaining_quantity' => $item->quantity,
+        'borrow' => $borrow,
+    ], 200);
+}
 }

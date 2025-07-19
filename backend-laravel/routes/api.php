@@ -43,6 +43,7 @@ Route::group(['prefix'=>'v1', 'namespace' => 'App\Http\Controllers\Api\V1'], fun
     
     // General resource routes last
     Route::apiResource('items', ItemController::class);
+    Route::post('items/{uuid}/borrow', [ItemController::class, 'borrowItem']);
 
     Route::apiResource('locations', LocationController::class);
 
@@ -52,6 +53,5 @@ Route::group(['prefix'=>'v1', 'namespace' => 'App\Http\Controllers\Api\V1'], fun
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('conditions', ConditionController::class);
     Route::apiResource('condition_numbers', ConditionNumberController::class);
-
 
 });

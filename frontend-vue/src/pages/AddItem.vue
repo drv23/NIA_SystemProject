@@ -141,7 +141,7 @@
         </div>
 
         <!-- Condition -->
-        <div class="form-group">
+        <div class="form-group" v-if="!isSupplyCategory">
           <label class="form-label">Condition</label>
           <div class="relative flex items-center">
             <span class="absolute left-4 text-gray-400">
@@ -161,7 +161,7 @@
         
 
          <!-- Condition -->
-        <div class="form-group">
+        <div class="form-group" v-if="!isSupplyCategory">
           <label class="form-label">Condition Number</label>
           <div class="relative flex items-center">
             <span class="absolute left-4 text-gray-400">
@@ -265,6 +265,7 @@ import usecategories from '../composables/useCategories'
 import useConditionNumbers from '../composables/useConditionNumbers'
 import axiosClient from '../axios'
 import useUsers from '../composables/useUsers'
+import { computed } from 'vue'
 
 
 const router = useRouter()
@@ -391,12 +392,13 @@ const handleSubmit = async () => {
       return
     }
 
-    if (!formData.value.condition) {
-      console.error('No condition selected')
-      errors.value.condition = ['Please select a condition']
-      isSubmitting.value = false
-      return
-    }
+    if (!isSupplyCategory.value) {
+      if (!formData.value.condition) {
+        console.error('No condition selected')
+        errors.value.condition = ['Please select a condition']
+        isSubmitting.value = false
+        return
+      }
 
     if (!formData.value.conditionNumber) {
       console.error('No condition number selected')
@@ -404,6 +406,7 @@ const handleSubmit = async () => {
       isSubmitting.value = false
       return
     }
+  }
 
     
 
@@ -437,6 +440,10 @@ const handleSubmit = async () => {
       condition_number_id: formData.value.conditionNumber,
       user_id: formData.value.issuedTo
     })
+    
+    
+
+
     
     // Append the image file if it exists
     if (formData.value.image) {
@@ -490,6 +497,13 @@ const handleSubmit = async () => {
     isSubmitting.value = false
   }
 }
+// Assuming categories are like: [{ id: 1, category: 'Supply' }, ...]
+const isSupplyCategory = computed(() => {
+  const selected = categories.value.find(cat => 
+    cat.id == formData.value.category || cat.category_id == formData.value.category
+  );
+  return selected && selected.category?.toLowerCase() === 'supply';
+});
 </script>
 
 <style scoped>

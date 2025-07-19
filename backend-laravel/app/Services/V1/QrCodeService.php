@@ -43,7 +43,7 @@ class QrCodeService
             'pac' => $item->pac,
             'unit_value' => $item->unit_value,
             'location' => $item->location->location,
-            'condition' => $item->condition_number->condition_number . ' ' . $item->condition->condition,
+            'condition_number' => $item->condition_number?->condition_number,
         ];
         $qrCodeData = json_encode($itemDetails);
 

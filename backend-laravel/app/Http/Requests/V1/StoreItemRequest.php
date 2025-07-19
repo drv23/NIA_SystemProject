@@ -31,8 +31,8 @@ class StoreItemRequest extends FormRequest
             'po_number' => 'required|string|max:50',
             'category_id' => 'required|exists:categories,id',
             'location_id' => 'required|exists:locations,id',
-            'condition_id' => 'required|exists:conditions,id',
-            'condition_number_id' => 'required|exists:condition_numbers,id',
+            'condition_id' => 'nullable',
+            'condition_number_id' => 'nullable',
             'user_id' => 'required|exists:users,id',
             'image_path' =>'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:10240'
         ];

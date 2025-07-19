@@ -19,12 +19,17 @@ class ItemResource extends JsonResource
             'uuid' => $this->uuid,
             'unit' => $this->unit,
             'description' => $this->description,
+            'category' => $this->category->category,
+            'quantity' => $this->quantity,
             'pac' =>$this->pac,
             'unit_value' => $this->unit_value,
             'po_number' => $this->po_number,
             "date_acquired" => $this->date_acquired,
             'location' => $this->location ? $this->location->location : null,
-            'condition' => $this->condition_number->condition_number . ' ' . $this->condition->condition,
+            // 'conditionType' => $this->condition ? $this->condition->condition : null,
+            'condition' => ($this->condition && $this->condition_number)
+    ? $this->condition->condition . ' (' . $this->condition_number->condition_number . ')'
+    : "(Supply)",
             'qr_code' => $this->qrCode ? $this->qrCode->qr_code_data : null,
             'image_path' => asset('storage/' . $this->image_path) ?? null,
             'qr_code_image' => $this->qrCode ? asset('storage/' . $this->qrCode->image_path)  : null,
