@@ -30,21 +30,29 @@ class AuthService
     }
 
     public function login(array $credentials)
-    {
-        $user = User::where('email', $credentials['email'])->first();
+{
+    $user = User::where('email', $credentials['email'])->first();
 
-        if (!$user || !Hash::check($credentials['password'], $user->password)) {
-            return null;
-        }
-
-        $token = $user->createToken($user->username);
-
-        return [
-            "message" => "You are successfully login!",
-            'user' => $user,
-            'token' => $token->plainTextToken,
-        ];
+    if (!$user || !Hash::check($credentials['password'], $user->password)) {
+        return false;
     }
+
+    $token = $user->createToken($user->username);
+
+    return [
+        "message" => "You are successfully login!",
+        'user' => [
+            'id' => $user->id,
+            'fullname' => $user->fullname,
+            'username' => $user->username,
+            'email' => $user->email,
+            'role' => $user->role,
+            'image' => $user->image,
+            'location' => $user->location,
+        ],
+        'token' => $token->plainTextToken,
+    ];
+}
 
     public function logout(Request $request)
     {

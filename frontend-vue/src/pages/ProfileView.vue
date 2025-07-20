@@ -1,38 +1,103 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
+import { ref, onMounted } from 'vue'
+import axiosClient from '../axios'
 
 const user = ref({
-  fullName: 'Jessie John Gludo',
-  username: 'jgludo',
-  email: 'xjsupreme@gmail.com',
+  fullName: '',
+  username: '',
+  email: '',
   location: '',
-  avatar: '../assets/avatar.jpg'
+  image: '',
+  password: ''
+})
+const selectedFile = ref(null)
+const loading = ref(false)
+
+onMounted(async () => {
+  const userId = localStorage.getItem('userId')
+  const backendUrl = 'http://localhost:8000/storage';
+  try {
+  const res = await axiosClient.get(`/users/${userId}`)
+  if(res.status == 200){
+    console.log("Success")
+    console.log(res.data)
+     
+  user.value.fullName = res.data.data.fullname
+  user.value.username = res.data.data.username
+  user.value.email = res.data.data.email
+  user.value.location = res.data.data.location.location
+  user.value.image = `${backendUrl}/${res.data.data.image}`
+  
+  } else{
+console.log('API Response:', res.data)  // <- Confirm actual data shape
+ 
+  
+  console.log('User Data:', user.value)  // <- Confirm reactivity works
+  }
+  
+} catch (e) {
+  console.error('API Error:', e.response ? e.response.data : e)
+}
 })
 
-const selectedFile = ref(null)
-const previewImage = ref(null)
-
 const handleFileChange = (event) => {
-  const file = event.target.files[0]
+  const file = event.target.files[0];
   if (file) {
-    selectedFile.value = file
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      previewImage.value = e.target.result
-    }
-    reader.readAsDataURL(file)
+    selectedFile.value = file;
   }
+};
+
+const saveProfile = async () => {
+  loading.value = true;
+  const userId = localStorage.getItem('userId');
+   const formData = new FormData();
+
+formData.append('fullname', user.value.fullName);
+formData.append('username', user.value.username);
+formData.append('email', user.value.email);
+formData.append('location', user.value.location);
+ 
+
+  if (selectedFile.value) {
+    formData.append('image', selectedFile.value);
+  }
+   
+if (user.password) {
+  formData.append('password', user.password)
+  formData.append('password_confirmation', user.password_confirmation)
 }
 
-const goToDashboard = () => {
-  router.push('/dashboard')
-}
+  console.log(formData)
+
+  try {
+    const res = await axiosClient.put(`/users/${userId}`, formData);
+    if(res.status == 200){
+       console.log(user.value.fullName)
+       
+    // Update user info after successful update
+    
+      const backendUrl = 'http://localhost:8000/storage';
+      user.value.fullName = res.data.data.fullname;
+      user.value.username = res.data.data.username;
+      user.value.email = res.data.data.email;
+      user.value.location = res.data.data.location.location;
+      user.value.image = `${backendUrl}/${res.data.data.image}`;
+    alert('Profile updated successfully!');
+    console.log(user)
+     console.log(res.data.data )
+  }
+  } catch (e) {
+    alert('Failed to update profile.');
+    console.error('Update Error:', e.response ? e.response.data : e);
+  } finally {
+    loading.value = false;
+  }
+};
+
 </script>
 
 <template>
+  <!-- <pre> {{  formData }}</pre> -->
   <div class="p-4 sm:p-6 lg:p-8">
     <!-- Back to Dashboard Button -->
     <button 
@@ -49,10 +114,10 @@ const goToDashboard = () => {
         <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-2">Admin</h1>
         <p class="text-gray-600 dark:text-gray-400 mb-6">Profile</p>
 
-        <form class="space-y-6">
-          <!-- Avatar Upload -->
+        <form class="space-y-6" @submit.prevent="saveProfile">
+          <!-- image Upload -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Avatar</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">image</label>
             <div class="flex items-center">
               <label class="relative cursor-pointer">
                 <input
@@ -109,22 +174,20 @@ const goToDashboard = () => {
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-300"
             >
               <option value="" disabled>Select Location</option>
-              <option value="location1">Location 1</option>
-              <option value="location2">Location 2</option>
-              <option value="location3">Location 3</option>
+             <option value="Panabo">Panabo</option>
+              <option value="Tagum">Tagum</option>
+              <option value="Davao">Davao</option>
+              <option value="ICT">ICT</option>
             </select>
           </div>
-
-          <!-- Password -->
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Password</label>
             <input
               type="password"
-              placeholder="Enter password"
+              placeholder="Password"
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-300"
             />
           </div>
-
           <!-- Confirm Password -->
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm Password</label>
@@ -134,6 +197,13 @@ const goToDashboard = () => {
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-300"
             />
           </div>
+          <button
+            type="submit"
+            class="mt-4 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+            :disabled="loading"
+          >
+            {{ loading ? 'Saving...' : 'Save Changes' }}
+          </button>
         </form>
       </div>
 
@@ -145,14 +215,13 @@ const goToDashboard = () => {
           <div class="flex justify-center mb-6">
             <div class="relative">
               <img
-                :src="previewImage || user.avatar"
+                :src="user.image"
                 alt="Profile"
                 class="w-32 h-32 rounded-full object-cover border-4 border-white dark:border-gray-600"
               />
               <span class="absolute bottom-0 right-0 bg-green-500 rounded-full w-6 h-6 border-2 border-white dark:border-gray-600"></span>
             </div>
           </div>
-          
           <div class="space-y-4">
             <div>
               <label class="block text-sm text-gray-500 dark:text-gray-400">Full Name</label>

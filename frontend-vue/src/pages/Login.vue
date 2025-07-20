@@ -192,14 +192,14 @@ const login = async () => {
 
       try {
         const response = await axiosClient.post('/login', data.value)
-        // console.log('Login response:', response)
-        
         if (response.status === 200) {
-          // Save token if it exists in response
           if (response.data.token) {
             localStorage.setItem('token', response.data.token)
+            axiosClient.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`
           }
-          // Navigate to dashboard
+          if (response.data.user && response.data.user.id) {
+            localStorage.setItem('userId', response.data.user.id)
+          }
           await router.push('/dashboard')
         }
       } catch (error) {
@@ -215,6 +215,7 @@ const login = async () => {
       }
     }
   }, 50)
+  
 }
 </script>
 

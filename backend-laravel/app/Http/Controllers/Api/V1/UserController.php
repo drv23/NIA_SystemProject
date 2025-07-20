@@ -35,7 +35,20 @@ class UserController extends Controller
     public function show(string $id)
     {
         $user = User::findOrFail($id);
-        return new UserResource($user);
+
+    // Optionally, you can use a Resource for more control
+    return response()->json([
+        'data' => [
+            'id' => $user->id,
+            'fullname' => $user->fullname,
+            'username' => $user->username,
+            'email' => $user->email,
+            'role' => $user->role,
+            'image' => $user->image,
+            'location' => $user->location,
+            'created_at' => $user->created_at,
+        ]
+    ]);
     }
 
     /**

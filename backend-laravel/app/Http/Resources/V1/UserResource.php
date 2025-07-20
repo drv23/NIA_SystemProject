@@ -17,11 +17,12 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'fullname' => $this->fullname,
+            'username' => $this->username,
             'email' => $this->email,
             'role' => $this->role,
             'image' => asset('storage/' . $this->image) ?? null,
             'location' => $this->location ? $this->location->location : null,
-            'created_at' =>  $this->created_at
+            'password' =>  $this->password
         ];
     }
 }
